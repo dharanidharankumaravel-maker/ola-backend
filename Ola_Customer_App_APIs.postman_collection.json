@@ -1,0 +1,614 @@
+{
+  "info": {
+    "_postman_id": "ola-clone-customer-api-v2",
+    "name": "Ola Clone — Customer App APIs",
+    "description": "Complete Customer App API collection for the Ola Clone platform.\n\nBase URL: {{baseUrl}}\n\nAuthentication: Bearer token (set via 'Login / Verify OTP' request which auto-sets {{accessToken}} and {{refreshToken}} variables).\n\n**Modules:**\n1. Authentication & Onboarding\n2. User Profile & Account Settings\n3. Map, Places & Locations\n4. Real-time Ghost Cars & Nearby Drivers\n5. Fare Estimates & Promo Offers\n6. Ride Lifecycle & Booking\n7. Alo Parcel (Delivery Service)\n8. Alo Money (Wallet) & Payments\n9. Ratings & Feedback\n10. Safety & Emergency (SOS)\n11. Support & FAQs\n12. Push Notification Device Registration",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl",      "value": "http://localhost:8000/api", "type": "string" },
+    { "key": "accessToken",  "value": "",                          "type": "string" },
+    { "key": "refreshToken", "value": "",                          "type": "string" },
+    { "key": "rideId",       "value": "",                          "type": "string" },
+    { "key": "savedPlaceId", "value": "",                          "type": "string" }
+  ],
+  "item": [
+    {
+      "name": "Module 1 — Authentication",
+      "item": [
+        {
+          "name": "1.1 Send OTP",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/auth/otp/send", "host": ["{{baseUrl}}"], "path": ["auth", "otp", "send"] },
+            "body": { "mode": "raw", "raw": "{\n  \"phone\": \"9876543210\",\n  \"fcm_key\": \"fcm_test_token_abc123\"\n}" }
+          }
+        },
+        {
+          "name": "1.2 Verify OTP & Login",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "var res = pm.response.json();",
+                "if (res.success && res.data) {",
+                "  pm.collectionVariables.set('accessToken',  res.data.tokens.accessToken);",
+                "  pm.collectionVariables.set('refreshToken', res.data.tokens.refreshToken);",
+                "  pm.test('Tokens saved', function() { pm.expect(res.data.tokens.accessToken).to.not.be.empty; });",
+                "}"
+              ]
+            }
+          }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/auth/otp/verify", "host": ["{{baseUrl}}"], "path": ["auth", "otp", "verify"] },
+            "body": { "mode": "raw", "raw": "{\n  \"phone\": \"9876543210\",\n  \"otp\": \"1234\",\n  \"fcm_key\": \"fcm_test_token_abc123\",\n  \"device_name\": \"Pixel 7\",\n  \"device_type\": \"smartphone\",\n  \"device_os\": \"Android 14\"\n}" }
+          }
+        },
+        {
+          "name": "1.3 Refresh Token",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/auth/refresh", "host": ["{{baseUrl}}"], "path": ["auth", "refresh"] },
+            "body": { "mode": "raw", "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}" }
+          }
+        },
+        {
+          "name": "1.4 Get Me (Current User)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": { "raw": "{{baseUrl}}/auth/me", "host": ["{{baseUrl}}"], "path": ["auth", "me"] }
+          }
+        },
+        {
+          "name": "1.5 Logout",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type",  "value": "application/json" }
+            ],
+            "url": { "raw": "{{baseUrl}}/auth/logout", "host": ["{{baseUrl}}"], "path": ["auth", "logout"] },
+            "body": { "mode": "raw", "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}" }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Module 2 — User Profile & Account Settings",
+      "item": [
+        {
+          "name": "2.0 Get User Profile",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": { "raw": "{{baseUrl}}/users/profile", "host": ["{{baseUrl}}"], "path": ["users", "profile"] }
+          }
+        },
+        {
+          "name": "2.1 Update User Profile",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type",  "value": "application/json" }
+            ],
+            "url": { "raw": "{{baseUrl}}/users/profile", "host": ["{{baseUrl}}"], "path": ["users", "profile"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Aarav Sharma\",\n  \"email\": \"aarav@example.com\",\n  \"avatarId\": \"Felix\",\n  \"emergency_contact\": \"+919123456789\"\n}"
+            }
+          }
+        },
+        {
+          "name": "2.1b Update Profile with Photo",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": { "raw": "{{baseUrl}}/users/profile", "host": ["{{baseUrl}}"], "path": ["users", "profile"] },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "name",   "value": "Aarav Sharma", "type": "text" },
+                { "key": "avatar", "value": "",              "type": "file", "src": "/path/to/photo.jpg" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "2.2 Update Notification & Location Preferences",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type",  "value": "application/json" }
+            ],
+            "url": { "raw": "{{baseUrl}}/users/preferences", "host": ["{{baseUrl}}"], "path": ["users", "preferences"] },
+            "body": { "mode": "raw", "raw": "{\n  \"notifications\": {\n    \"rideUpdates\": true,\n    \"promotions\": true,\n    \"sosAlerts\": true,\n    \"appUpdates\": false\n  },\n  \"location\": {\n    \"shareWithDriver\": true,\n    \"highAccuracyMode\": true,\n    \"backgroundTracking\": false\n  }\n}" }
+          }
+        },
+        {
+          "name": "2.3 Set Emergency Contact",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type",  "value": "application/json" }
+            ],
+            "url": { "raw": "{{baseUrl}}/users/emergency-contact", "host": ["{{baseUrl}}"], "path": ["users", "emergency-contact"] },
+            "body": { "mode": "raw", "raw": "{\n  \"phone\": \"9123456789\"\n}" }
+          }
+        },
+        {
+          "name": "2.4 Delete Account",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": { "raw": "{{baseUrl}}/users/account", "host": ["{{baseUrl}}"], "path": ["users", "account"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Module 3 — Map, Places & Locations",
+      "item": [
+        {
+          "name": "3.1 Place Search / Autocomplete",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/map/search?q=Chennai&latitude=13.0827&longitude=80.2707&limit=8",
+              "host": ["{{baseUrl}}"],
+              "path": ["map", "search"],
+              "query": [
+                { "key": "q",         "value": "Chennai" },
+                { "key": "latitude",  "value": "13.0827" },
+                { "key": "longitude", "value": "80.2707" },
+                { "key": "limit",     "value": "8" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "3.2 Reverse Geocoding",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/map/reverse-geocode?lat=13.0827&lng=80.2707",
+              "host": ["{{baseUrl}}"],
+              "path": ["map", "reverse-geocode"],
+              "query": [
+                { "key": "lat", "value": "13.0827" },
+                { "key": "lng", "value": "80.2707" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "3.3 Calculate Route & Polyline",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/map/route", "host": ["{{baseUrl}}"], "path": ["map", "route"] },
+            "body": { "mode": "raw", "raw": "{\n  \"origin\": {\n    \"latitude\": 13.0827,\n    \"longitude\": 80.2707\n  },\n  \"destination\": {\n    \"latitude\": 12.9941,\n    \"longitude\": 80.1709\n  }\n}" }
+          }
+        },
+        {
+          "name": "3.4a Get Saved Places",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": { "raw": "{{baseUrl}}/users/saved-places", "host": ["{{baseUrl}}"], "path": ["users", "saved-places"] }
+          }
+        },
+        {
+          "name": "3.4b Add Saved Place",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "var res = pm.response.json();",
+                "if (res.success && res.data) {",
+                "  pm.collectionVariables.set('savedPlaceId', res.data.id);",
+                "}"
+              ]
+            }
+          }],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type",  "value": "application/json" }
+            ],
+            "url": { "raw": "{{baseUrl}}/users/saved-places", "host": ["{{baseUrl}}"], "path": ["users", "saved-places"] },
+            "body": { "mode": "raw", "raw": "{\n  \"title\": \"Home\",\n  \"subtitle\": \"No 42, Anna Salai, Chennai\",\n  \"location\": {\n    \"latitude\": 13.0827,\n    \"longitude\": 80.2707,\n    \"formattedAddress\": \"No 42, Anna Salai, Chennai, Tamil Nadu 600002\",\n    \"shortAddress\": \"Anna Salai\"\n  }\n}" }
+          }
+        },
+        {
+          "name": "3.4c Delete Saved Place",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": { "raw": "{{baseUrl}}/users/saved-places/{{savedPlaceId}}", "host": ["{{baseUrl}}"], "path": ["users", "saved-places", "{{savedPlaceId}}"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Module 4 — Nearby Drivers",
+      "item": [
+        {
+          "name": "4.1 Get Nearby Drivers",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/drivers/nearby?latitude=13.0827&longitude=80.2707&radius=3000&category=all",
+              "host": ["{{baseUrl}}"],
+              "path": ["drivers", "nearby"],
+              "query": [
+                { "key": "latitude",  "value": "13.0827" },
+                { "key": "longitude", "value": "80.2707" },
+                { "key": "radius",    "value": "3000" },
+                { "key": "category",  "value": "all" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "4.1b Nearby Drivers - Daily Category",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/drivers/nearby?latitude=13.0827&longitude=80.2707&radius=5000&category=daily",
+              "host": ["{{baseUrl}}"],
+              "path": ["drivers", "nearby"],
+              "query": [
+                { "key": "latitude",  "value": "13.0827" },
+                { "key": "longitude", "value": "80.2707" },
+                { "key": "radius",    "value": "5000" },
+                { "key": "category",  "value": "daily" }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Module 5 — Fare Estimates & Promo",
+      "item": [
+        {
+          "name": "5.1 Calculate Fare Estimates",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type",  "value": "application/json" }
+            ],
+            "url": { "raw": "{{baseUrl}}/rides/estimates", "host": ["{{baseUrl}}"], "path": ["rides", "estimates"] },
+            "body": { "mode": "raw", "raw": "{\n  \"pickup\": {\n    \"latitude\": 13.0827,\n    \"longitude\": 80.2707\n  },\n  \"destination\": {\n    \"latitude\": 12.9941,\n    \"longitude\": 80.1709\n  },\n  \"category\": \"daily\"\n}" }
+          }
+        },
+        {
+          "name": "5.1b Rental Fare Estimate",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type",  "value": "application/json" }
+            ],
+            "url": { "raw": "{{baseUrl}}/rides/estimates", "host": ["{{baseUrl}}"], "path": ["rides", "estimates"] },
+            "body": { "mode": "raw", "raw": "{\n  \"pickup\": {\n    \"latitude\": 13.0827,\n    \"longitude\": 80.2707\n  },\n  \"destination\": {\n    \"latitude\": 13.0500,\n    \"longitude\": 80.2824\n  },\n  \"category\": \"rentals\",\n  \"rentalHours\": 4\n}" }
+          }
+        },
+        {
+          "name": "5.2 Validate Promo Code",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type",  "value": "application/json" }
+            ],
+            "url": { "raw": "{{baseUrl}}/promos/validate", "host": ["{{baseUrl}}"], "path": ["promos", "validate"] },
+            "body": { "mode": "raw", "raw": "{\n  \"code\": \"FLAT50\",\n  \"estimated_fare\": 250.00,\n  \"vehicle_type\": \"sedan\"\n}" }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Module 6 — Ride Lifecycle & Booking",
+      "item": [
+        {
+          "name": "6.1 Book a Ride",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "var res = pm.response.json();",
+                "if (res.success && res.data) {",
+                "  pm.collectionVariables.set('rideId', res.data.rideId);",
+                "  pm.test('Ride booked', function() { pm.expect(res.data.status).to.eql('requested'); });",
+                "}"
+              ]
+            }
+          }],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type",  "value": "application/json" }
+            ],
+            "url": { "raw": "{{baseUrl}}/rides/book", "host": ["{{baseUrl}}"], "path": ["rides", "book"] },
+            "body": { "mode": "raw", "raw": "{\n  \"pickup\": {\n    \"latitude\": 13.0827,\n    \"longitude\": 80.2707,\n    \"formattedAddress\": \"Anna Salai, Chennai, Tamil Nadu\"\n  },\n  \"destination\": {\n    \"latitude\": 12.9941,\n    \"longitude\": 80.1709,\n    \"formattedAddress\": \"Chennai Airport, Tirusulam, Chennai\"\n  },\n  \"vehicleType\": \"sedan\",\n  \"category\": \"daily\",\n  \"paymentMethod\": \"cash\",\n  \"tipAmount\": 20\n}" }
+          }
+        },
+        {
+          "name": "6.1b Book Scheduled Ride",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type",  "value": "application/json" }
+            ],
+            "url": { "raw": "{{baseUrl}}/rides/book", "host": ["{{baseUrl}}"], "path": ["rides", "book"] },
+            "body": { "mode": "raw", "raw": "{\n  \"pickup\": {\n    \"latitude\": 13.0827,\n    \"longitude\": 80.2707,\n    \"formattedAddress\": \"Anna Salai, Chennai\"\n  },\n  \"destination\": {\n    \"latitude\": 12.9941,\n    \"longitude\": 80.1709,\n    \"formattedAddress\": \"Chennai Airport\"\n  },\n  \"vehicleType\": \"suv\",\n  \"category\": \"outstation\",\n  \"paymentMethod\": \"wallet\",\n  \"scheduledAt\": \"2026-10-08T06:00:00Z\"\n}" }
+          }
+        },
+        {
+          "name": "6.2 Get Current Active Ride",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": { "raw": "{{baseUrl}}/rides/current", "host": ["{{baseUrl}}"], "path": ["rides", "current"] }
+          }
+        },
+        {
+          "name": "6.3 Update Tip Amount",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type",  "value": "application/json" }
+            ],
+            "url": { "raw": "{{baseUrl}}/rides/{{rideId}}/tip", "host": ["{{baseUrl}}"], "path": ["rides", "{{rideId}}", "tip"] },
+            "body": { "mode": "raw", "raw": "{\n  \"tipAmount\": 50\n}" }
+          }
+        },
+        {
+          "name": "6.4 Cancel Ride",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type",  "value": "application/json" }
+            ],
+            "url": { "raw": "{{baseUrl}}/rides/{{rideId}}/cancel", "host": ["{{baseUrl}}"], "path": ["rides", "{{rideId}}", "cancel"] },
+            "body": { "mode": "raw", "raw": "{\n  \"reason\": \"Change of plans\"\n}" }
+          }
+        },
+        {
+          "name": "6.5 Ride History",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/rides/history?page=1&limit=10&status=completed",
+              "host": ["{{baseUrl}}"],
+              "path": ["rides", "history"],
+              "query": [
+                { "key": "page",   "value": "1" },
+                { "key": "limit",  "value": "10" },
+                { "key": "status", "value": "completed" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "6.5b Cancelled Rides History",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/rides/history?page=1&limit=10&status=cancelled",
+              "host": ["{{baseUrl}}"],
+              "path": ["rides", "history"],
+              "query": [
+                { "key": "page",   "value": "1" },
+                { "key": "limit",  "value": "10" },
+                { "key": "status", "value": "cancelled" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "6.6a Get Scheduled Rides",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": { "raw": "{{baseUrl}}/rides/scheduled", "host": ["{{baseUrl}}"], "path": ["rides", "scheduled"] }
+          }
+        },
+        {
+          "name": "6.6b Cancel Scheduled Ride",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": { "raw": "{{baseUrl}}/rides/scheduled/{{rideId}}", "host": ["{{baseUrl}}"], "path": ["rides", "scheduled", "{{rideId}}"] }
+          }
+        },
+        {
+          "name": "6.7 Get Ride Detail",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": { "raw": "{{baseUrl}}/rides/{{rideId}}", "host": ["{{baseUrl}}"], "path": ["rides", "{{rideId}}"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Module 7 — Alo Parcel",
+      "item": [
+        {
+          "name": "7.1 Book Parcel Delivery",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type",  "value": "application/json" }
+            ],
+            "url": { "raw": "{{baseUrl}}/parcel/book", "host": ["{{baseUrl}}"], "path": ["parcel", "book"] },
+            "body": { "mode": "raw", "raw": "{\n  \"senderName\": \"Aarav Sharma\",\n  \"senderPhone\": \"9876543210\",\n  \"receiverName\": \"Priya Patel\",\n  \"receiverPhone\": \"9123456789\",\n  \"contents\": \"Electronics — Laptop\",\n  \"weightCategory\": \"Up to 5 kg\",\n  \"type\": \"send\",\n  \"pickup\": {\n    \"latitude\": 13.0827,\n    \"longitude\": 80.2707,\n    \"formattedAddress\": \"Anna Salai, Chennai\"\n  },\n  \"destination\": {\n    \"latitude\": 12.9941,\n    \"longitude\": 80.1709,\n    \"formattedAddress\": \"Velachery, Chennai\"\n  },\n  \"paymentMethod\": \"cash\"\n}" }
+          }
+        },
+        {
+          "name": "7.2 Upload Parcel Media",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": { "raw": "{{baseUrl}}/parcel/upload", "host": ["{{baseUrl}}"], "path": ["parcel", "upload"] },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "file", "type": "file", "src": "/path/to/parcel-photo.jpg" }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Module 8 — Wallet & Payments",
+      "item": [
+        {
+          "name": "8.1 Get Wallet Balance & Passbook",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/wallet?page=1&limit=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["wallet"],
+              "query": [
+                { "key": "page",  "value": "1" },
+                { "key": "limit", "value": "20" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "8.2 Top-up Wallet",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type",  "value": "application/json" }
+            ],
+            "url": { "raw": "{{baseUrl}}/wallet/topup", "host": ["{{baseUrl}}"], "path": ["wallet", "topup"] },
+            "body": { "mode": "raw", "raw": "{\n  \"amount\": 500,\n  \"paymentMethod\": \"upi\",\n  \"gateway\": \"razorpay\"\n}" }
+          }
+        },
+        {
+          "name": "8.3 Settle Trip Payment",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type",  "value": "application/json" }
+            ],
+            "url": { "raw": "{{baseUrl}}/rides/{{rideId}}/pay", "host": ["{{baseUrl}}"], "path": ["rides", "{{rideId}}", "pay"] },
+            "body": { "mode": "raw", "raw": "{\n  \"paymentMethod\": \"wallet\",\n  \"transactionId\": \"TXN_UPI_99410294\"\n}" }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Module 9 — Ratings & Feedback",
+      "item": [
+        {
+          "name": "9.1 Submit Driver & Trip Feedback",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type",  "value": "application/json" }
+            ],
+            "url": { "raw": "{{baseUrl}}/rides/{{rideId}}/feedback", "host": ["{{baseUrl}}"], "path": ["rides", "{{rideId}}", "feedback"] },
+            "body": { "mode": "raw", "raw": "{\n  \"rating\": 5,\n  \"review\": \"Very professional driver, smooth ride!\",\n  \"tags\": [\"Clean Car\", \"Safe Driving\", \"On Time\"]\n}" }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Module 10 — Safety & Emergency",
+      "item": [
+        {
+          "name": "10.1 Trigger SOS Alert",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type",  "value": "application/json" }
+            ],
+            "url": { "raw": "{{baseUrl}}/safety/sos", "host": ["{{baseUrl}}"], "path": ["safety", "sos"] },
+            "body": { "mode": "raw", "raw": "{\n  \"rideId\": \"{{rideId}}\",\n  \"latitude\": 13.0827,\n  \"longitude\": 80.2707\n}" }
+          }
+        },
+        {
+          "name": "10.2 Generate Live Ride Share Link",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": { "raw": "{{baseUrl}}/rides/{{rideId}}/share", "host": ["{{baseUrl}}"], "path": ["rides", "{{rideId}}", "share"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Module 11 — Support & FAQs",
+      "item": [
+        {
+          "name": "11.1 Get FAQ Categories & Articles",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/support/faqs", "host": ["{{baseUrl}}"], "path": ["support", "faqs"] }
+          }
+        },
+        {
+          "name": "11.2 Create Support Ticket",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type",  "value": "application/json" }
+            ],
+            "url": { "raw": "{{baseUrl}}/support/tickets", "host": ["{{baseUrl}}"], "path": ["support", "tickets"] },
+            "body": { "mode": "raw", "raw": "{\n  \"subject\": \"Incorrect fare charged\",\n  \"category\": \"Billing & Payments\",\n  \"description\": \"I was charged ₹50 extra on my last ride RIDE-000042. Please review and refund.\",\n  \"rideId\": \"{{rideId}}\",\n  \"priority\": \"high\"\n}" }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Module 12 — Push Notification Device Registration",
+      "item": [
+        {
+          "name": "12.1 Register FCM / APNs Device Token",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type",  "value": "application/json" }
+            ],
+            "url": { "raw": "{{baseUrl}}/notifications/device", "host": ["{{baseUrl}}"], "path": ["notifications", "device"] },
+            "body": { "mode": "raw", "raw": "{\n  \"fcmToken\": \"fcm_token_abc123xyz_device_unique_token_here\",\n  \"platform\": \"android\",\n  \"deviceId\": \"device_unique_id_abc123\"\n}" }
+          }
+        }
+      ]
+    }
+  ]
+}

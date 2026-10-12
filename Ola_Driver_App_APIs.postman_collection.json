@@ -1,0 +1,1105 @@
+{
+  "info": {
+    "_postman_id": "9d2b271a-e83c-4a37-b248-driverapp001",
+    "name": "Ola Driver App APIs",
+    "description": "Complete collection for Ola Driver Mobile Application APIs, including Authentication, Profile & KYC, Vehicle Management, Status & Telemetry, Ride Lifecycle, Earnings, Wallet & Payouts, Notifications, Settings, and Emergency SOS.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://127.0.0.1:8000/api",
+      "type": "string"
+    },
+    {
+      "key": "accessToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "refreshToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "verificationId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "rideId",
+      "value": "RIDE-8421",
+      "type": "string"
+    },
+    {
+      "key": "notificationId",
+      "value": "1",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "4.1 Authentication & Onboarding",
+      "item": [
+        {
+          "name": "1. Send OTP / Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.data && jsonData.data.verificationId) {",
+                  "    pm.collectionVariables.set('verificationId', jsonData.data.verificationId);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phoneNumber\": \"9876543210\",\n  \"countryCode\": \"+91\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/send-otp",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "send-otp"]
+            },
+            "description": "Sends SMS verification OTP to driver's phone. Returns OTP in response as requested."
+          },
+          "response": []
+        },
+        {
+          "name": "2. Verify OTP & Authenticate",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.data && jsonData.data.tokens) {",
+                  "    pm.collectionVariables.set('accessToken', jsonData.data.tokens.accessToken);",
+                  "    pm.collectionVariables.set('refreshToken', jsonData.data.tokens.refreshToken);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phoneNumber\": \"9876543210\",\n  \"countryCode\": \"+91\",\n  \"otp\": \"123456\",\n  \"verificationId\": \"{{verificationId}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/verify-otp",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "verify-otp"]
+            },
+            "description": "Validates OTP, issues JWT tokens, returns registration completion status."
+          },
+          "response": []
+        },
+        {
+          "name": "3. Refresh Access Token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.data && jsonData.data.accessToken) {",
+                  "    pm.collectionVariables.set('accessToken', jsonData.data.accessToken);",
+                  "    pm.collectionVariables.set('refreshToken', jsonData.data.refreshToken);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/refresh-token",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "refresh-token"]
+            },
+            "description": "Refreshes expired access token using valid refresh token."
+          },
+          "response": []
+        },
+        {
+          "name": "4. Driver Logout",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/logout",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "logout"]
+            },
+            "description": "Clears FCM token, invalidates JWT refresh session, marks driver offline."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "4.2 Driver Profile & KYC Verification",
+      "item": [
+        {
+          "name": "1. Create / Update Initial Profile",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "firstName", "value": "Rajesh", "type": "text" },
+                { "key": "lastName", "value": "Kumar", "type": "text" },
+                { "key": "email", "value": "rajesh@example.com", "type": "text" },
+                { "key": "address", "value": "12, 1st Cross Street, KK Nagar, Madurai", "type": "text" },
+                { "key": "password", "value": "securePass123", "type": "text" },
+                { "key": "profileImage", "type": "file", "src": "" }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/driver/profile",
+              "host": ["{{baseUrl}}"],
+              "path": ["driver", "profile"]
+            },
+            "description": "Step 1 of onboarding. Accepts multipart form or JSON."
+          },
+          "response": []
+        },
+        {
+          "name": "2. Get Driver Profile Details",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/driver/profile",
+              "host": ["{{baseUrl}}"],
+              "path": ["driver", "profile"]
+            },
+            "description": "Returns full driver profile, vehicle, rating, and bank info."
+          },
+          "response": []
+        },
+        {
+          "name": "3. Update Profile Details",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"Rajesh\",\n  \"lastName\": \"Kumar\",\n  \"email\": \"rajesh.new@example.com\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/driver/profile",
+              "host": ["{{baseUrl}}"],
+              "path": ["driver", "profile"]
+            },
+            "description": "Updates driver name and email."
+          },
+          "response": []
+        },
+        {
+          "name": "4. Upload Personal KYC Documents",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "documentType", "value": "DL", "type": "text" },
+                { "key": "documentNumber", "value": "DL-TN59-20180004921", "type": "text" },
+                { "key": "expiryDate", "value": "2028-06-15", "type": "text" },
+                { "key": "frontImage", "type": "file", "src": "" },
+                { "key": "backImage", "type": "file", "src": "" }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/driver/documents/personal",
+              "host": ["{{baseUrl}}"],
+              "path": ["driver", "documents", "personal"]
+            },
+            "description": "Uploads National ID, Driving License, or Passport."
+          },
+          "response": []
+        },
+        {
+          "name": "5. Renew Expired Document",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "documentType", "value": "Driving License", "type": "text" },
+                { "key": "expiryDate", "value": "2027-10-01", "type": "text" },
+                { "key": "frontImage", "type": "file", "src": "" },
+                { "key": "backImage", "type": "file", "src": "" }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/driver/documents/renew",
+              "host": ["{{baseUrl}}"],
+              "path": ["driver", "documents", "renew"]
+            },
+            "description": "Used when Driving License or Insurance has expired."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "4.3 Vehicle Management & Documentation",
+      "item": [
+        {
+          "name": "1. Register Vehicle",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"serviceType\": \"Car / Prime Sedan\",\n  \"brand\": \"Maruti Suzuki\",\n  \"model\": \"Dzire\",\n  \"manufacturerYear\": \"2022\",\n  \"numberPlate\": \"MH 12 AB 1234\",\n  \"color\": \"White\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/driver/vehicle",
+              "host": ["{{baseUrl}}"],
+              "path": ["driver", "vehicle"]
+            },
+            "description": "Registers vehicle for the driver."
+          },
+          "response": []
+        },
+        {
+          "name": "2. Upload Vehicle Documents",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "vehicleId", "value": "veh_49102", "type": "text" },
+                { "key": "documentCategory", "value": "INSURANCE", "type": "text" },
+                { "key": "policyOrCertNumber", "value": "POL-9921448-ICICI", "type": "text" },
+                { "key": "expiryDate", "value": "2027-09-20", "type": "text" },
+                { "key": "frontImage", "type": "file", "src": "" },
+                { "key": "backImage", "type": "file", "src": "" }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/driver/vehicle/documents",
+              "host": ["{{baseUrl}}"],
+              "path": ["driver", "vehicle", "documents"]
+            },
+            "description": "Uploads RC Book, Insurance, Owner Cert, or PUC."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "4.4 Driver Status & Telemetry",
+      "item": [
+        {
+          "name": "1. Toggle Online / Offline Status",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"isOnline\": true,\n  \"currentLat\": 9.9252,\n  \"currentLng\": 78.1198\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/driver/status/toggle",
+              "host": ["{{baseUrl}}"],
+              "path": ["driver", "status", "toggle"]
+            },
+            "description": "Toggles online or offline status with coordinates."
+          },
+          "response": []
+        },
+        {
+          "name": "2. Batch Location Telemetry Update",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"locations\": [\n    {\n      \"latitude\": 9.9252,\n      \"longitude\": 78.1198,\n      \"bearing\": 90.0,\n      \"speed\": 28.5,\n      \"timestamp\": 1727690200000\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/driver/telemetry/location",
+              "host": ["{{baseUrl}}"],
+              "path": ["driver", "telemetry", "location"]
+            },
+            "description": "HTTP fallback telemetry update for queued coordinates."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "4.5 Ride & Dispatch Lifecycle",
+      "item": [
+        {
+          "name": "0. Available / Unaccepted Rides",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/rides/unaccepted?lat=12.9716&lng=77.5946&radius=25&vehicle_type=sedan",
+              "host": ["{{baseUrl}}"],
+              "path": ["rides", "unaccepted"],
+              "query": [
+                {
+                  "key": "lat",
+                  "value": "12.9716",
+                  "description": "Driver current latitude"
+                },
+                {
+                  "key": "lng",
+                  "value": "77.5946",
+                  "description": "Driver current longitude"
+                },
+                {
+                  "key": "radius",
+                  "value": "25",
+                  "description": "Search radius in km"
+                },
+                {
+                  "key": "vehicle_type",
+                  "value": "sedan",
+                  "description": "Optional filter by vehicle type"
+                }
+              ]
+            },
+            "description": "Fetches incoming / unaccepted ride requests within radius, sorted by proximity to pickup location."
+          },
+          "response": []
+        },
+        {
+          "name": "1. Accept Ride",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/rides/{{rideId}}/accept",
+              "host": ["{{baseUrl}}"],
+              "path": ["rides", "{{rideId}}", "accept"]
+            },
+            "description": "Accepts an incoming ride request."
+          },
+          "response": []
+        },
+        {
+          "name": "2. Decline / Reject Ride",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"TOO_FAR\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/rides/{{rideId}}/reject",
+              "host": ["{{baseUrl}}"],
+              "path": ["rides", "{{rideId}}", "reject"]
+            },
+            "description": "Declines ride or records rejection reason."
+          },
+          "response": []
+        },
+        {
+          "name": "3. Driver Arrived at Pickup",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/rides/{{rideId}}/arrive",
+              "host": ["{{baseUrl}}"],
+              "path": ["rides", "{{rideId}}", "arrive"]
+            },
+            "description": "Signals driver has arrived at pickup location."
+          },
+          "response": []
+        },
+        {
+          "name": "4. Start Trip (Verify PIN)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"startPin\": \"4821\",\n  \"startLat\": 9.9252,\n  \"startLng\": 78.1198\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/rides/{{rideId}}/start",
+              "host": ["{{baseUrl}}"],
+              "path": ["rides", "{{rideId}}", "start"]
+            },
+            "description": "Starts trip after verifying passenger 4-digit PIN."
+          },
+          "response": []
+        },
+        {
+          "name": "5. Driver Arrived at Destination",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/rides/{{rideId}}/reach-destination",
+              "host": ["{{baseUrl}}"],
+              "path": ["rides", "{{rideId}}", "reach-destination"]
+            },
+            "description": "Signals vehicle has reached destination."
+          },
+          "response": []
+        },
+        {
+          "name": "6. End & Complete Trip",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"finalDistanceKm\": 6.4,\n  \"tollCharges\": 0.0,\n  \"parkingCharges\": 0.0,\n  \"cashCollected\": false\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/rides/{{rideId}}/complete",
+              "host": ["{{baseUrl}}"],
+              "path": ["rides", "{{rideId}}", "complete"]
+            },
+            "description": "Completes trip, computes fare breakup, and credits driver wallet."
+          },
+          "response": []
+        },
+        {
+          "name": "7. Cancel Active Trip",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"RIDER_NO_SHOW\",\n  \"comments\": \"Rider did not answer calls for 10 minutes.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/rides/{{rideId}}/cancel",
+              "host": ["{{baseUrl}}"],
+              "path": ["rides", "{{rideId}}", "cancel"]
+            },
+            "description": "Cancels active ride with reason and applies cancellation fee."
+          },
+          "response": []
+        },
+        {
+          "name": "8. Trip History (Paginated)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/rides/history?page=1&limit=20&status=all",
+              "host": ["{{baseUrl}}"],
+              "path": ["rides", "history"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "20" },
+                { "key": "status", "value": "all" }
+              ]
+            },
+            "description": "Fetches paginated list of driver trips."
+          },
+          "response": []
+        },
+        {
+          "name": "9. Trip Detailed Breakdown",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/rides/{{rideId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["rides", "{{rideId}}"]
+            },
+            "description": "Returns full route polyline, timeline, reviews, and receipt."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "4.6 Earnings & Performance Analytics",
+      "item": [
+        {
+          "name": "1. Earnings Summary & Performance Charts",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/driver/earnings/summary?period=today",
+              "host": ["{{baseUrl}}"],
+              "path": ["driver", "earnings", "summary"],
+              "query": [
+                { "key": "period", "value": "today" }
+              ]
+            },
+            "description": "Powers earnings screen and performance charts."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "4.7 Wallet, Payouts & Banking",
+      "item": [
+        {
+          "name": "1. Get Wallet Balance & Transactions",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/driver/wallet",
+              "host": ["{{baseUrl}}"],
+              "path": ["driver", "wallet"]
+            },
+            "description": "Returns current wallet balance and transaction ledger."
+          },
+          "response": []
+        },
+        {
+          "name": "2. Request Payout / Cashout",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": 1000.0,\n  \"bankAccountId\": \"bank_99182\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/driver/wallet/withdraw",
+              "host": ["{{baseUrl}}"],
+              "path": ["driver", "wallet", "withdraw"]
+            },
+            "description": "Requests withdrawal to bank account (minimum ₹ 500)."
+          },
+          "response": []
+        },
+        {
+          "name": "3. Update Bank Account Details",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"bankName\": \"HDFC Bank\",\n  \"accountHolderName\": \"Rajesh Kumar\",\n  \"accountNumber\": \"50100293819201\",\n  \"ifscCode\": \"HDFC0001234\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/driver/bank-details",
+              "host": ["{{baseUrl}}"],
+              "path": ["driver", "bank-details"]
+            },
+            "description": "Updates bank account name, holder name, account number, and IFSC."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "4.8 Alerts & In-App Notifications",
+      "item": [
+        {
+          "name": "1. Get Notification List",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/driver/notifications",
+              "host": ["{{baseUrl}}"],
+              "path": ["driver", "notifications"]
+            },
+            "description": "Fetches driver alerts and push notifications."
+          },
+          "response": []
+        },
+        {
+          "name": "2. Mark Notification as Read",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/driver/notifications/{{notificationId}}/read",
+              "host": ["{{baseUrl}}"],
+              "path": ["driver", "notifications", "{{notificationId}}", "read"]
+            },
+            "description": "Marks single notification as read."
+          },
+          "response": []
+        },
+        {
+          "name": "3. Clear All Notifications",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/driver/notifications",
+              "host": ["{{baseUrl}}"],
+              "path": ["driver", "notifications"]
+            },
+            "description": "Clears all driver notifications."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "4.9 Settings & Configuration",
+      "item": [
+        {
+          "name": "1. Get App Settings",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/driver/settings",
+              "host": ["{{baseUrl}}"],
+              "path": ["driver", "settings"]
+            },
+            "description": "Fetches driver application preferences."
+          },
+          "response": []
+        },
+        {
+          "name": "2. Update App Settings",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"notificationsEnabled\": true,\n  \"language\": \"English\",\n  \"themeMode\": \"system\",\n  \"autoAcceptRides\": false,\n  \"navigationApp\": \"google_maps\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/driver/settings",
+              "host": ["{{baseUrl}}"],
+              "path": ["driver", "settings"]
+            },
+            "description": "Updates driver preferences."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "4.10 Help, Support & Emergency SOS",
+      "item": [
+        {
+          "name": "1. Submit Support Ticket",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"category\": \"Fare Discrepancy\",\n  \"subject\": \"Fare for trip RIDE-8421 was incorrect\",\n  \"description\": \"The toll charge of 50 was not included in the final bill.\",\n  \"rideId\": \"RIDE-8421\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/support/tickets",
+              "host": ["{{baseUrl}}"],
+              "path": ["support", "tickets"]
+            },
+            "description": "Submits support inquiry or complaint ticket."
+          },
+          "response": []
+        },
+        {
+          "name": "2. Trigger Emergency SOS",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"currentLat\": 9.9252,\n  \"currentLng\": 78.1198,\n  \"activeRideId\": \"RIDE-8421\",\n  \"batteryLevel\": 84\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/driver/safety/sos",
+              "host": ["{{baseUrl}}"],
+              "path": ["driver", "safety", "sos"]
+            },
+            "description": "Panic button emergency beacon."
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}
